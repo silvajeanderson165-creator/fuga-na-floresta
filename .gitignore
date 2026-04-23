@@ -1,0 +1,19 @@
+# Vercel
+.vercel/
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+.tmp/
+*.log
+
+# Gemini
+.gemini/
+gemini.md

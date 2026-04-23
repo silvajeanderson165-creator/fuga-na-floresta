@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════════════════
+   FUGA NA FLORESTA - Estilos
+   Jogo 2D Endless Runner - Floresta Amazônica
+   ═══════════════════════════════════════════════════════ */
+
+/* Reset e configuração base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #0a0a0a;
+    /* Prevenir comportamentos indesejados no mobile */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* Prevenir pull-to-refresh no mobile */
+    overscroll-behavior: none;
+}
+
+/* Container do jogo - centralizado */
+#game-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #0a0a0a;
+}
+
+/* Canvas do jogo */
+#gameCanvas {
+    display: block;
+    /* O tamanho será controlado via JavaScript para manter aspect ratio */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    /* Sombra sutil ao redor do canvas */
+    box-shadow: 0 0 40px rgba(34, 139, 34, 0.15);
+}
+
+/* Prevenir zoom no iOS com double tap */
+#gameCanvas {
+    touch-action: manipulation;
+}
