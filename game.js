@@ -90,8 +90,9 @@ class Game {
         window.addEventListener('orientationchange', () => setTimeout(() => this._resize(), 100));
         document.addEventListener('keydown', (e) => this._onKey(e, true));
         document.addEventListener('keyup', (e) => this._onKeyUp(e));
-        this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this._onTouch(e, true); }, {passive:false});
-        this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this._onTouch(e, false); }, {passive:false});
+        this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this._onTouchStart(e); }, {passive:false});
+        this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); this._onTouchMove(e); }, {passive:false});
+        this.canvas.addEventListener('touchend', (e) => { e.preventDefault(); this._onTouchEnd(e); }, {passive:false});
         this.canvas.addEventListener('mousedown', (e) => this._onMouse(e));
         // Pause ao perder foco
         document.addEventListener('visibilitychange', () => {
@@ -132,28 +133,46 @@ class Game {
     _onKeyUp(e) {
         if (e.code === 'ArrowDown' && this.state === 'playing') this.player.duck(false);
     }
-    _onTouch(e, start) {
+    _onTouchStart(e) {
         let rect = this.canvas.getBoundingClientRect();
-        let touch = e.changedTouches[0];
+        let touch = e.touches[0];
         let y = (touch.clientY - rect.top) / rect.height;
-        if (start) {
-            this.easterEggTimer = 0; this.showMonkey = false;
-            if (this.state === 'start' || this.state === 'gameover') { this._initAudio(); this._startGame(); return; }
-            if (this.state === 'paused') { this._togglePause(); return; } // ANY touch unpauses
-            if (y < 0.3) { this._togglePause(); return; }
-            if (this.state !== 'playing') return;
-            this.touchStartTime = Date.now();
-            this.touchHolding = true;
-            if (this.player.jump()) this.audio.playJump();
-            // Agachar após 200ms de toque
-            this._touchDuckTimeout = setTimeout(() => {
-                if (this.touchHolding && this.player.onGround) this.player.duck(true);
-            }, 200);
-        } else {
-            this.touchHolding = false;
-            if (this._touchDuckTimeout) clearTimeout(this._touchDuckTimeout);
-            this.player.duck(false);
+        
+        this.touchStartY = touch.clientY;
+        this.swipeTriggered = false;
+
+        this.easterEggTimer = 0; this.showMonkey = false;
+        if (this.state === 'start' || this.state === 'gameover') { this._initAudio(); this._startGame(); return; }
+        if (this.state === 'paused') { this._togglePause(); return; } // ANY touch unpauses
+        if (y < 0.3) { this._togglePause(); return; }
+        if (this.state !== 'playing') return;
+        
+        if (this.player.jump()) this.audio.playJump();
+        
+        this.touchHolding = true;
+        this._touchDuckTimeout = setTimeout(() => {
+            if (this.touchHolding && this.player.onGround && !this.swipeTriggered) this.player.duck(true);
+        }, 150);
+    }
+
+    _onTouchMove(e) {
+        if (this.state !== 'playing') return;
+        let touch = e.touches[0];
+        let dy = touch.clientY - this.touchStartY;
+        
+        if (!this.swipeTriggered && dy > 30) { 
+            this.swipeTriggered = true;
+            if (!this.player.onGround) {
+                this.player.vy = 12; // Fast fall para descer mais rápido se estiver no pulo
+            }
+            this.player.duck(true);
         }
+    }
+
+    _onTouchEnd(e) {
+        this.touchHolding = false;
+        if (this._touchDuckTimeout) clearTimeout(this._touchDuckTimeout);
+        if (this.state === 'playing') this.player.duck(false);
     }
     _onMouse(e) {
         let rect = this.canvas.getBoundingClientRect();
