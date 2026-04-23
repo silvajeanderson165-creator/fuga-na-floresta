@@ -21,16 +21,47 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
+    <div id="game-container" style="position: relative;">
         <canvas id="gameCanvas"></canvas>
+        <button id="pwa-install-btn" style="display:none; position:absolute; top: 40%; left: 50%; transform: translateX(-50%); z-index: 100; padding: 12px 24px; background: #4CAF50; color: white; border: 2px solid white; border-radius: 25px; font-weight: bold; font-family: monospace; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6); animation: pulseBtn 1.5s infinite;">📲 INSTALAR APP</button>
     </div>
+    <style>
+      @keyframes pulseBtn {
+        0% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.05); }
+        100% { transform: translateX(-50%) scale(1); }
+      }
+    </style>
     <!-- Scripts na ordem correta: engine → entities → game -->
     <script src="engine.js"></script>
     <script src="entities.js"></script>
     <script src="game.js"></script>
     
-    <!-- Registro do Service Worker para o PWA -->
+    <!-- Registro do Service Worker para o PWA e Install Prompt -->
     <script>
+      let deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevenir o mini-infobar padrão
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Exibir nosso botão "Instalar" de alta conversão
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) btn.style.display = 'block';
+      });
+
+      document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+        if (deferredPrompt !== null) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+            document.getElementById('pwa-install-btn').style.display = 'none';
+        }
+      });
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
