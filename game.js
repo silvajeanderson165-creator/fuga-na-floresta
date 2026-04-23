@@ -139,6 +139,7 @@ class Game {
         if (start) {
             this.easterEggTimer = 0; this.showMonkey = false;
             if (this.state === 'start' || this.state === 'gameover') { this._initAudio(); this._startGame(); return; }
+            if (this.state === 'paused') { this._togglePause(); return; } // ANY touch unpauses
             if (y < 0.3) { this._togglePause(); return; }
             if (this.state !== 'playing') return;
             this.touchStartTime = Date.now();
@@ -158,6 +159,8 @@ class Game {
         let rect = this.canvas.getBoundingClientRect();
         let mx = (e.clientX - rect.left) / this.scaleRatio;
         let my = (e.clientY - rect.top) / this.scaleRatio;
+        // Se estiver pausado, qualquer clique despausa
+        if (this.state === 'paused') { this._togglePause(); return; }
         // Botão mute (canto superior esquerdo, ao lado do pause)
         if (mx > 38 && mx < 70 && my < 40) { this._toggleMute(); return; }
         if (mx < 38 && my < 50 && this.state === 'playing') this._togglePause();
@@ -257,7 +260,7 @@ class Game {
         // Dash Countdown
         if (this.dashTimer > 0) {
             this.dashTimer--;
-            if (this.dashTimer % 5 === 0) this._addParticles(this.player.x, this.player.y, 2, '#ff3333');
+            if (this.dashTimer % 5 === 0) this._addParticles(this.player.x, this.player.y, 2, '#ff9800');
             if (this.dashTimer <= 0) this.audio.playMilestone();
         }
 
@@ -361,7 +364,7 @@ class Game {
                         this.dashItemCount++;
                         if (this.dashItemCount >= 5) {
                             this.dashItemCount = 0;
-                            this.dashTimer = 120; // 2 segundos de dash
+                            this.dashTimer = 60; // 1 segundo de dash
                             this.audio.playJump(); // Feedback extra
                         }
                     }
@@ -437,20 +440,38 @@ class Game {
         ctx.font='18px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.7)';
         ctx.fillText(this.muted?'🔇':'🔊', 42, 38);
         
-        // Dash collectible mini-bar
-        let dashBarX = this.canvas.width/2 - 50;
-        ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(dashBarX, 20, 100, 12);
-        if (this.dashTimer > 0) {
-            ctx.fillStyle='#ffea00'; 
-            ctx.fillRect(dashBarX, 20, 100 * (this.dashTimer / 120), 12);
-        } else {
-            ctx.fillStyle='#ff3333'; 
-            ctx.fillRect(dashBarX, 20, 100 * (this.dashItemCount / 5), 12);
+        // Dash HUD Professional Bar
+        ctx.save();
+        let dx = this.canvas.width/2 - 70;
+        let dy = 15;
+        let dw = 140;
+        let dh = 15;
+
+        // Fundo da barra
+        ctx.fillStyle='rgba(0,0,0,0.5)';
+        ctx.beginPath(); ctx.roundRect(dx, dy, dw, dh, 7); ctx.fill();
+        
+        let pct = this.dashTimer > 0 ? (this.dashTimer / 60) : (this.dashItemCount / 5);
+        if (pct > 0) {
+            let bg = ctx.createLinearGradient(dx, 0, dx+dw, 0);
+            if (this.dashTimer > 0) {
+                bg.addColorStop(0, '#ffeb3b'); bg.addColorStop(1, '#ff9800'); // Dash ativo (Dourado/Laranja)
+                ctx.shadowColor = '#ff9800'; ctx.shadowBlur = 10;
+            } else {
+                bg.addColorStop(0, '#e53935'); bg.addColorStop(1, '#ff8a80'); // Coletando (Vermelho maçã)
+            }
+            ctx.fillStyle = bg;
+            ctx.beginPath(); ctx.roundRect(dx, dy, dw * pct, dh, 7); ctx.fill();
         }
-        ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.strokeRect(dashBarX, 20, 100, 12);
-        ctx.font='12px sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center';
-        ctx.fillText(this.dashTimer > 0 ? '🚀 DASH!' : '🍎 ' + this.dashItemCount + '/5', dashBarX + 50, 31);
-        ctx.textAlign='left';
+        
+        // Borda e Texto
+        ctx.shadowBlur = 0; // reset
+        ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.roundRect(dx, dy, dw, dh, 7); ctx.stroke();
+        
+        ctx.font='bold 11.5px "Courier New"'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+        ctx.fillText(this.dashTimer > 0 ? '🚀 SUPER DASH!' : '🍎 ENERGIA: ' + this.dashItemCount + '/5', dx + dw/2, dy + 11.5);
+        ctx.restore();
 
         // Power-up ativo indicator
         if (this.activePowerUp) {
