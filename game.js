@@ -496,8 +496,13 @@ class Game {
         ctx.fillStyle=this.flashColor;ctx.fillRect(0,0,this.canvas.width,this.canvas.height);ctx.restore();}
         // Combo indicator
         if (this.comboMultiplier > 1) {
-            ctx.font = 'bold 14px "Courier New"'; ctx.fillStyle = '#ff0';
-            ctx.fillText('COMBO x1.5!', this.canvas.width/2 - 40, 28);
+            ctx.save();
+            ctx.font = 'bold 15px "Courier New"'; 
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#ffeb3b';
+            ctx.shadowColor = '#ff9800'; ctx.shadowBlur = 8;
+            ctx.fillText('🔥 COMBO x1.5! 🔥', this.canvas.width/2, 46);
+            ctx.restore();
         }
         // Overlays de estado
         if (this.state === 'paused') this.ui.drawPauseScreen(ctx);
