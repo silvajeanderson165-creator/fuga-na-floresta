@@ -40,10 +40,49 @@ class Game {
     }
     _resize() {
         let w = window.innerWidth, h = window.innerHeight;
-        let scale = Math.min(w / this.BASE_W, h / this.BASE_H);
-        this.canvas.style.width = (this.BASE_W * scale) + 'px';
-        this.canvas.style.height = (this.BASE_H * scale) + 'px';
-        this.scaleRatio = scale;
+        let isMobile = ('ontouchstart' in window) || w < 768;
+        if (isMobile) {
+            // Mobile: preenche tela inteira ajustando a altura lógica
+            this.BASE_W = 800;
+            this.BASE_H = 800 * (h / w);
+            this.canvas.width = this.BASE_W;
+            this.canvas.height = this.BASE_H;
+            this.canvas.style.width = w + 'px';
+            this.canvas.style.height = h + 'px';
+            this.scaleRatio = w / this.BASE_W;
+        } else {
+            // Desktop: mantém aspect ratio original (800x400)
+            this.BASE_W = 800;
+            this.BASE_H = 400;
+            this.canvas.width = this.BASE_W;
+            this.canvas.height = this.BASE_H;
+            let scale = Math.min(w / this.BASE_W, h / this.BASE_H);
+            this.canvas.style.width = (this.BASE_W * scale) + 'px';
+            this.canvas.style.height = (this.BASE_H * scale) + 'px';
+            this.scaleRatio = scale;
+        }
+        
+        // Atualiza a posição do chão para as entidades ativas
+        let groundY = this.canvas.height * 0.82;
+        if (this.player) {
+            this.player.h = this.canvas.height;
+            this.player.groundY = groundY;
+            if (this.player.onGround) this.player.y = groundY;
+        }
+        if (this.bg) {
+            this.bg.h = this.canvas.height;
+            this.bg.groundY = groundY;
+        }
+        if (this.obstacles) {
+            for (let obs of this.obstacles) {
+                obs.groundY = groundY;
+                if (obs.type === 'arara') obs.y = groundY - 65 - Math.random() * 20;
+                else obs.y = groundY - obs.height;
+            }
+        }
+        if (this.powerups) {
+            for (let pu of this.powerups) pu.y = groundY - 40 - Math.random() * 50;
+        }
     }
     _bindEvents() {
         window.addEventListener('resize', () => this._resize());
