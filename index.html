@@ -10,6 +10,13 @@
     <meta property="og:type" content="website">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+    <!-- PWA e iOS Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Floresta">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <title>Fuga na Floresta 🌿</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -21,5 +28,16 @@
     <script src="engine.js"></script>
     <script src="entities.js"></script>
     <script src="game.js"></script>
+    
+    <!-- Registro do Service Worker para o PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registrado com sucesso:', reg.scope))
+            .catch(err => console.error('Erro ao registrar SW:', err));
+        });
+      }
+    </script>
 </body>
 </html>
