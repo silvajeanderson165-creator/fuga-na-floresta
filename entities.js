@@ -169,12 +169,12 @@ class Obstacle {
     }
     _drawCobra(ctx) {
         let x=this.x, y=this.y;
-        ctx.strokeStyle='#2d5a1a'; ctx.lineWidth=8; ctx.lineCap='round';
+        ctx.strokeStyle='#c2185b'; ctx.lineWidth=8; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(x,y+10);
         for(let i=0;i<5;i++) ctx.quadraticCurveTo(x+i*12+6,y+(i%2?2:14),x+(i+1)*11,y+8);
         ctx.stroke();
         // Cabeça
-        ctx.fillStyle='#3a7a2a'; ctx.beginPath();
+        ctx.fillStyle='#e91e63'; ctx.beginPath();
         ctx.ellipse(x+2,y+8,7,6,-0.3,0,Math.PI*2); ctx.fill();
         // Olho
         ctx.fillStyle='#ff0'; ctx.beginPath(); ctx.arc(x,y+6,2,0,Math.PI*2); ctx.fill();

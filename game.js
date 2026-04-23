@@ -23,6 +23,7 @@ class Game {
         // Power-ups
         this.powerups = []; this.activePowerUp = null; this.powerUpTimer = 0;
         this.invincible = false; this.powerUpSpawnTimer = 0;
+        this.dashItemCount = 0; this.dashTimer = 0; this.appleSpawnTimer = 0;
         // Achievements
         this.stats = JSON.parse(localStorage.getItem('fugaStats') || '{"totalJumps":0,"totalGames":0,"totalScore":0,"maxCombo":0,"obstaclesAvoided":0,"powerUpsCollected":0,"oncasAvoided":0}');
         this.achievements = JSON.parse(localStorage.getItem('fugaAchievements') || '[]');
@@ -173,10 +174,11 @@ class Game {
         this.lastMilestone = 0; this.isNewRecord = false;
         this.comboCount = 0; this.comboMultiplier = 1; this.comboTimer = 0;
         this.obstacles = []; this.particles = []; this.powerups = [];
-        this.spawnTimer = 90; this.powerUpSpawnTimer = 300;
+        this.spawnTimer = 90; this.powerUpSpawnTimer = 300; this.appleSpawnTimer = 150;
         this.slowMoTimer = 0; this.slowMoSpeed = 1;
         this.flashTimer = 0; this.tutorialObstaclesShown = 0;
         this.activePowerUp = null; this.powerUpTimer = 0; this.invincible = false;
+        this.dashItemCount = 0; this.dashTimer = 0;
         this.ui.gameOverAnim = 0;
         this.fadeDir = -1; this.fadeAlpha = 1; // fade-in
         this.player = new Player(this.canvas);
@@ -251,9 +253,21 @@ class Game {
             return;
         }
         if (this.state !== 'playing') return;
+        
+        // Dash Countdown
+        if (this.dashTimer > 0) {
+            this.dashTimer--;
+            if (this.dashTimer % 5 === 0) this._addParticles(this.player.x, this.player.y, 2, '#ff3333');
+            if (this.dashTimer <= 0) this.audio.playMilestone();
+        }
+
+        this.invincible = (this.activePowerUp === 'banana') || (this.dashTimer > 0);
+
         // Score e velocidade
-        this.score += this.comboMultiplier;
-        this.speed = Math.min(this.maxSpeed, this.baseSpeed + this.score * 0.001);
+        this.score += this.comboMultiplier * (this.dashTimer > 0 ? 2 : 1);
+        let baseS = this.baseSpeed + this.score * 0.001;
+        this.speed = Math.min(this.maxSpeed * (this.dashTimer > 0 ? 3 : 1), baseS * (this.dashTimer > 0 ? 3 : 1));
+        
         // Slow-motion
         if (this.slowMoTimer > 0) { this.slowMoTimer--; if(this.slowMoTimer<=0) this.slowMoSpeed=1; }
         // Flash
@@ -276,7 +290,7 @@ class Game {
         // Background
         this.bg.update(this.speed * this.slowMoSpeed, this.score);
         // Obstáculos - spawn
-        this.spawnTimer--;
+        this.spawnTimer -= (this.dashTimer > 0 ? 3 : 1);
         if (this.spawnTimer <= 0) {
             this._spawnObstacle();
             let range = this.spawnMax - this.spawnMin;
@@ -326,6 +340,14 @@ class Game {
             this.powerups.push({ type, x: this.canvas.width+20, y: groundY-40-Math.random()*50, w:28, h:28, active:true });
             this.powerUpSpawnTimer = 300 + Math.random()*200;
         }
+
+        // Apple (Dash collectible) - spawn
+        this.appleSpawnTimer -= (this.dashTimer > 0 ? 3 : 1);
+        if (this.appleSpawnTimer <= 0) {
+            let groundY = this.canvas.height * 0.82;
+            this.powerups.push({ type: 'maca', x: this.canvas.width+20, y: groundY-40-Math.random()*50, w:28, h:28, active:true });
+            this.appleSpawnTimer = 180 + Math.random()*120;
+        }
         // Power-ups - update e coleta
         for (let i=this.powerups.length-1; i>=0; i--) {
             let pu = this.powerups[i];
@@ -334,6 +356,20 @@ class Game {
             let ph = this.player.hitbox;
             if (ph.x < pu.x+pu.w && ph.x+ph.w > pu.x && ph.y < pu.y+pu.h && ph.y+ph.h > pu.y) {
                 this.powerups.splice(i,1);
+                if (pu.type === 'maca') {
+                    if (this.dashTimer <= 0) {
+                        this.dashItemCount++;
+                        if (this.dashItemCount >= 5) {
+                            this.dashItemCount = 0;
+                            this.dashTimer = 120; // 2 segundos de dash
+                            this.audio.playJump(); // Feedback extra
+                        }
+                    }
+                    this._addParticles(pu.x, pu.y, 8, '#ff3333');
+                    this.audio.playMilestone();
+                    this.ui.addFloatingText(pu.x, pu.y-20, '+1 Maçã', '#ff3333');
+                    continue;
+                }
                 this.activePowerUp = pu.type;
                 this.powerUpTimer = pu.type==='banana'? 180 : 120; // 3s ou 2s
                 this.invincible = pu.type==='banana';
@@ -400,6 +436,22 @@ class Game {
         // Mute icon
         ctx.font='18px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.7)';
         ctx.fillText(this.muted?'🔇':'🔊', 42, 38);
+        
+        // Dash collectible mini-bar
+        let dashBarX = this.canvas.width/2 - 50;
+        ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(dashBarX, 20, 100, 12);
+        if (this.dashTimer > 0) {
+            ctx.fillStyle='#ffea00'; 
+            ctx.fillRect(dashBarX, 20, 100 * (this.dashTimer / 120), 12);
+        } else {
+            ctx.fillStyle='#ff3333'; 
+            ctx.fillRect(dashBarX, 20, 100 * (this.dashItemCount / 5), 12);
+        }
+        ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.strokeRect(dashBarX, 20, 100, 12);
+        ctx.font='12px sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+        ctx.fillText(this.dashTimer > 0 ? '🚀 DASH!' : '🍎 ' + this.dashItemCount + '/5', dashBarX + 50, 31);
+        ctx.textAlign='left';
+
         // Power-up ativo indicator
         if (this.activePowerUp) {
             let pct = this.powerUpTimer / (this.activePowerUp==='banana'?180:120);
@@ -475,10 +527,10 @@ class Game {
             let bounce = Math.sin(t+pu.x*0.1)*4;
             ctx.save(); ctx.translate(pu.x+14, pu.y+14+bounce);
             // Glow
-            ctx.shadowColor = pu.type==='banana'?'#ffe135':'#8B6914';
+            ctx.shadowColor = pu.type==='banana'?'#ffe135':(pu.type==='coco'?'#8B6914':'#ff3333');
             ctx.shadowBlur = 10+Math.sin(t)*5;
             ctx.font = '24px sans-serif';
-            ctx.fillText(pu.type==='banana'?'🍌':'🥥', -12, 8);
+            ctx.fillText(pu.type==='banana'?'🍌':(pu.type==='coco'?'🥥':'🍎'), -12, 8);
             ctx.restore();
         }
     }
