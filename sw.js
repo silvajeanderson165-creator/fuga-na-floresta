@@ -1,4 +1,4 @@
-const CACHE_NAME = 'floresta-cache-v4';
+const CACHE_NAME = 'floresta-cache-v5';
 const urlsToCache = [
   './',
   './index.html',
