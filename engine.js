@@ -95,7 +95,7 @@ class Background {
         this._drawGround(ctx);
         this._drawLeaves(ctx);
         this._drawFog(ctx);
-        if (np > 0.15) this._drawFireflies(ctx, np);
+        this._drawFireflies(ctx, np);
     }
     // Interpola entre duas cores hex conforme t (0=cor1, 1=cor2)
     _lerpColor(c1, c2, t) {
@@ -106,17 +106,16 @@ class Background {
     }
     _drawSky(ctx, np) {
         let g = ctx.createLinearGradient(0, 0, 0, this.groundY);
-        // Interpola cores: dia → entardecer → noite
-        let topDay='#87CEEB',topSunset='#e8703a',topNight='#0a0e2a';
-        let midDay='#a8dff0',midSunset='#c06040',midNight='#1a1a4a';
-        let botDay='#c8f0c8',botSunset='#5a5030',botNight='#2a3a2a';
+        // Céu turquesa escuro profundo como na imagem
+        let topDay='#0C2E4A',topSunset='#8B3A1A',topNight='#050810';
+        let midDay='#1A6B7A',midSunset='#6A3020',midNight='#0A1030';
+        let botDay='#2A8A7A',botSunset='#3A4020',botNight='#152015';
         let top,mid,bot;
         if(np<0.5){let t=np*2;top=this._lerpColor(topDay,topSunset,t);mid=this._lerpColor(midDay,midSunset,t);bot=this._lerpColor(botDay,botSunset,t);}
         else{let t=(np-0.5)*2;top=this._lerpColor(topSunset,topNight,t);mid=this._lerpColor(midSunset,midNight,t);bot=this._lerpColor(botSunset,botNight,t);}
-        g.addColorStop(0,top);g.addColorStop(0.5,mid);g.addColorStop(1,bot);
+        g.addColorStop(0,top);g.addColorStop(0.4,mid);g.addColorStop(1,bot);
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, this.w, this.groundY);
-        // Estrelas aparecem gradualmente
         if (np > 0.3) {
             let starAlpha = (np-0.3)/0.7;
             for (let i = 0; i < 40; i++) {
@@ -126,7 +125,7 @@ class Background {
         }
     }
     _drawClouds(ctx) {
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
         for (let c of this.clouds) {
             let x = ((c.x - this.offsets[0]) % (this.w * 2) + this.w * 2) % (this.w * 2) - this.w * 0.5;
             ctx.beginPath(); ctx.ellipse(x, c.y, c.w / 2, c.h / 2, 0, 0, Math.PI * 2); ctx.fill();
@@ -137,36 +136,54 @@ class Background {
     _drawMountains(ctx) {
         for (let m of this.mountains) {
             let x = ((m.x - this.offsets[1]) % (this.w * 2) + this.w * 2) % (this.w * 2) - this.w * 0.3;
-            ctx.fillStyle = '#5a7a6a';
-            ctx.beginPath(); ctx.moveTo(x, this.groundY); ctx.lineTo(x + m.w / 2, this.groundY - m.h); ctx.lineTo(x + m.w, this.groundY); ctx.fill();
-            ctx.fillStyle = '#6a8a7a';
-            ctx.beginPath(); ctx.moveTo(x + m.w / 2, this.groundY - m.h); ctx.lineTo(x + m.w * 0.55, this.groundY - m.h + 15); ctx.lineTo(x + m.w * 0.65, this.groundY); ctx.lineTo(x + m.w, this.groundY); ctx.fill();
+            // Montanha arredondada escura como na imagem
+            ctx.fillStyle = '#163830';
+            ctx.beginPath();
+            ctx.moveTo(x, this.groundY);
+            ctx.quadraticCurveTo(x + m.w * 0.25, this.groundY - m.h * 0.9, x + m.w / 2, this.groundY - m.h);
+            ctx.quadraticCurveTo(x + m.w * 0.75, this.groundY - m.h * 0.9, x + m.w, this.groundY);
+            ctx.fill();
+            ctx.fillStyle = '#1E4A40';
+            ctx.beginPath();
+            ctx.moveTo(x + m.w * 0.5, this.groundY - m.h);
+            ctx.quadraticCurveTo(x + m.w * 0.75, this.groundY - m.h * 0.85, x + m.w, this.groundY);
+            ctx.lineTo(x + m.w * 0.6, this.groundY);
+            ctx.fill();
         }
     }
     _drawTreesBack(ctx) {
         for (let t of this.trees) {
             let x = ((t.x - this.offsets[2]) % (this.w * 2) + this.w * 2) % (this.w * 2) - this.w * 0.3;
-            // Tronco
-            ctx.fillStyle = '#5a3a1a';
-            ctx.fillRect(x - t.w / 6, this.groundY - t.h * 0.5, t.w / 3, t.h * 0.5);
-            // Copa
-            let colors = ['#1a6a1a', '#228B22', '#2a8a2a'];
-            ctx.fillStyle = colors[t.type];
-            if (t.type === 0) { // Árvore redonda
-                ctx.beginPath(); ctx.ellipse(x, this.groundY - t.h * 0.65, t.w * 0.7, t.h * 0.45, 0, 0, Math.PI * 2); ctx.fill();
-            } else if (t.type === 1) { // Palmeira
-                for (let a = 0; a < 5; a++) {
-                    let angle = -Math.PI / 2 + (a - 2) * 0.5;
-                    ctx.save(); ctx.translate(x, this.groundY - t.h * 0.5);
-                    ctx.rotate(angle); ctx.fillStyle = '#2a8a2a';
-                    ctx.beginPath(); ctx.ellipse(0, -t.h * 0.3, 8, t.h * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+            if (t.type === 0) {
+                // Árvore redonda tropical (verde escuro florestal)
+                ctx.fillStyle = '#2A1A0E';
+                ctx.fillRect(x - 5, this.groundY - t.h * 0.45, 10, t.h * 0.45);
+                ctx.fillStyle = '#0D5A22';
+                ctx.beginPath(); ctx.ellipse(x, this.groundY - t.h * 0.55, t.w * 0.8, t.h * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#147A30';
+                ctx.beginPath(); ctx.ellipse(x + 5, this.groundY - t.h * 0.6, t.w * 0.6, t.h * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+            } else if (t.type === 1) {
+                // Palmeira tropical
+                ctx.fillStyle = '#3A2410';
+                ctx.beginPath(); ctx.moveTo(x - 4, this.groundY); ctx.lineTo(x - 2, this.groundY - t.h * 0.6);
+                ctx.lineTo(x + 2, this.groundY - t.h * 0.6); ctx.lineTo(x + 4, this.groundY); ctx.fill();
+                for (let a = 0; a < 6; a++) {
+                    let angle = -Math.PI / 2 + (a - 2.5) * 0.45;
+                    ctx.save(); ctx.translate(x, this.groundY - t.h * 0.6);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = a % 2 === 0 ? '#0E6A28' : '#1A8035';
+                    ctx.beginPath(); ctx.ellipse(0, -t.h * 0.28, 10, t.h * 0.28, 0, 0, Math.PI * 2); ctx.fill();
                     ctx.restore();
                 }
-            } else { // Pinheiro
-                for (let j = 0; j < 3; j++) {
-                    let y2 = this.groundY - t.h * 0.3 - j * t.h * 0.2;
-                    let w2 = t.w * (1 - j * 0.25);
-                    ctx.beginPath(); ctx.moveTo(x, y2 - t.h * 0.2); ctx.lineTo(x - w2, y2); ctx.lineTo(x + w2, y2); ctx.fill();
+            } else {
+                // Pinheiro MUITO escuro (como na imagem)
+                ctx.fillStyle = '#2A1A0E';
+                ctx.fillRect(x - 4, this.groundY - t.h * 0.3, 8, t.h * 0.3);
+                for (let j = 0; j < 4; j++) {
+                    let y2 = this.groundY - t.h * 0.25 - j * t.h * 0.2;
+                    let w2 = t.w * (1.1 - j * 0.22);
+                    ctx.fillStyle = j % 2 === 0 ? '#062E14' : '#0A3A1C';
+                    ctx.beginPath(); ctx.moveTo(x, y2 - t.h * 0.22); ctx.lineTo(x - w2, y2 + 5); ctx.lineTo(x + w2, y2 + 5); ctx.fill();
                 }
             }
         }
@@ -174,35 +191,44 @@ class Background {
     _drawBushesLayer(ctx) {
         for (let b of this.bushes) {
             let x = ((b.x - this.offsets[3]) % (this.w * 2) + this.w * 2) % (this.w * 2) - this.w * 0.3;
-            ctx.fillStyle = '#2d7a2d';
-            ctx.beginPath(); ctx.ellipse(x, this.groundY - 5, b.w / 2, b.h / 2, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#3a9a3a';
-            ctx.beginPath(); ctx.ellipse(x - b.w * 0.2, this.groundY - 8, b.w * 0.3, b.h * 0.4, 0, 0, Math.PI * 2); ctx.fill();
-            // Flores pequenas
-            if (Math.random() > 0.97) {
-                ctx.fillStyle = ['#ff6b6b', '#ffd93d', '#ff9ff3'][Math.floor(Math.random() * 3)];
-                ctx.beginPath(); ctx.arc(x + Math.random() * 20 - 10, this.groundY - 10 - Math.random() * 15, 3, 0, Math.PI * 2); ctx.fill();
+            // Arbusto denso tropical escuro
+            ctx.fillStyle = '#0A4A20';
+            ctx.beginPath(); ctx.ellipse(x, this.groundY - 4, b.w * 0.6, b.h * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#0E6A2E';
+            ctx.beginPath(); ctx.ellipse(x - b.w * 0.2, this.groundY - 10, b.w * 0.4, b.h * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#148035';
+            ctx.beginPath(); ctx.ellipse(x + b.w * 0.15, this.groundY - 12, b.w * 0.35, b.h * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+            // Samambaias escuras
+            ctx.fillStyle = '#0D5A25';
+            for (let f = 0; f < 3; f++) {
+                let fx = x - 15 + f * 15, fy = this.groundY - 5;
+                ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx - 6, fy - 18); ctx.lineTo(fx + 6, fy - 18); ctx.fill();
             }
         }
     }
     _drawGround(ctx) {
         let gy = this.groundY;
-        // Terra principal
-        let g = ctx.createLinearGradient(0, gy, 0, this.h);
-        g.addColorStop(0, '#4a7a2a'); g.addColorStop(0.15, '#6B4226'); g.addColorStop(0.5, '#8B4513'); g.addColorStop(1, '#5a3010');
-        ctx.fillStyle = g; ctx.fillRect(0, gy, this.w, this.h - gy);
-        // Grama no topo
-        ctx.strokeStyle = '#3a8a2a'; ctx.lineWidth = 2;
-        for (let i = 0; i < this.w; i += 6) {
-            let ox = (i + this.offsets[4] * 0.5) % this.w;
-            let h = 4 + Math.sin(i * 0.3) * 3;
-            ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + 2, gy - h); ctx.stroke();
+        // Faixa de grama verde escura
+        let grassH = (this.h - gy) * 0.15;
+        let gg = ctx.createLinearGradient(0, gy, 0, gy + grassH);
+        gg.addColorStop(0, '#1A5A2A'); gg.addColorStop(1, '#2A4A18');
+        ctx.fillStyle = gg; ctx.fillRect(0, gy, this.w, grassH);
+        // Terra marrom escura (como na imagem)
+        let g = ctx.createLinearGradient(0, gy + grassH, 0, this.h);
+        g.addColorStop(0, '#4A2A10'); g.addColorStop(0.5, '#5D3A1A'); g.addColorStop(1, '#3A1E0A');
+        ctx.fillStyle = g; ctx.fillRect(0, gy + grassH, this.w, this.h - gy - grassH);
+        // Textura de madeira no chão
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1;
+        for (let i = 0; i < 8; i++) {
+            let ly = gy + grassH + i * ((this.h - gy - grassH) / 8);
+            ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(this.w, ly); ctx.stroke();
         }
-        // Detalhes
-        for (let d of this.groundDetails) {
-            let x = ((d.x - this.offsets[4]) % (this.w * 2) + this.w * 2) % (this.w * 2) - 20;
-            if (d.type === 0) { ctx.fillStyle = '#7a5a3a'; ctx.beginPath(); ctx.ellipse(x, gy + 10, d.size, d.size * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }
-            else if (d.type === 1) { ctx.strokeStyle = '#5a4020'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, gy + 5); ctx.quadraticCurveTo(x + 5, gy + 3, x + 10, gy + 8); ctx.stroke(); }
+        // Grama estilizada no topo
+        for (let i = 0; i < this.w; i += 5) {
+            let ox = (i + this.offsets[4] * 0.5) % this.w;
+            let h = 5 + Math.sin(i * 0.4) * 4;
+            ctx.strokeStyle = i % 10 < 5 ? '#3AA655' : '#2D8040'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + 1, gy - h); ctx.stroke();
         }
     }
     _drawLeaves(ctx) {
@@ -216,17 +242,18 @@ class Background {
         }
     }
     _drawFireflies(ctx, np) {
+        // Vagalumes SEMPRE visíveis (como na imagem), mais intensos à noite
         let t = Date.now()*0.003;
-        let ffAlpha = Math.min(1, (np-0.15)/0.4); // Aparecem gradualmente
+        let ffAlpha = Math.max(0.5, np > 0.15 ? Math.min(1, (np-0.15)/0.4) : 0.5);
         for (let f of this.fireflies) {
             let glow = (Math.sin(t+f.phase)+1)/2;
             let fx = f.x+Math.sin(t*f.speed+f.phase)*f.radius;
             let fy = f.y+Math.cos(t*f.speed*0.7+f.phase)*20;
-            ctx.save(); ctx.globalAlpha = ffAlpha*(0.3+glow*0.7);
-            let rg = ctx.createRadialGradient(fx,fy,0,fx,fy,8+glow*6);
-            rg.addColorStop(0,'rgba(255,255,100,0.8)'); rg.addColorStop(1,'rgba(255,255,100,0)');
-            ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(fx,fy,8+glow*6,0,Math.PI*2); ctx.fill();
-            ctx.fillStyle='#ffa'; ctx.beginPath(); ctx.arc(fx,fy,1.5,0,Math.PI*2); ctx.fill();
+            ctx.save(); ctx.globalAlpha = ffAlpha*(0.4+glow*0.6);
+            let rg = ctx.createRadialGradient(fx,fy,0,fx,fy,6+glow*5);
+            rg.addColorStop(0,'rgba(180,255,80,0.9)'); rg.addColorStop(1,'rgba(180,255,80,0)');
+            ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(fx,fy,6+glow*5,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='rgba(220,255,150,0.9)'; ctx.beginPath(); ctx.arc(fx,fy,1.5,0,Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
@@ -234,30 +261,35 @@ class Background {
         for (let v of this.vines) {
             let vx = ((v.x - this.offsets[2]) % (this.w*2) + this.w*2) % (this.w*2) - this.w*0.3;
             let sway = Math.sin(Date.now()*0.001+v.sway)*8;
-            ctx.strokeStyle='#2d5a1a'; ctx.lineWidth=3; ctx.lineCap='round';
+            ctx.strokeStyle='#0A3A15'; ctx.lineWidth=5; ctx.lineCap='round';
             ctx.beginPath(); ctx.moveTo(vx,0);
             ctx.quadraticCurveTo(vx+sway,v.len*0.5,vx+sway*0.5,v.len); ctx.stroke();
-            ctx.strokeStyle='#3a7a2a'; ctx.lineWidth=1.5;
+            ctx.strokeStyle='#155A25'; ctx.lineWidth=2.5;
             ctx.beginPath(); ctx.moveTo(vx,0);
             ctx.quadraticCurveTo(vx+sway,v.len*0.5,vx+sway*0.5,v.len); ctx.stroke();
-            // Folhinha na ponta
-            ctx.fillStyle='#32CD32';
-            ctx.beginPath(); ctx.ellipse(vx+sway*0.5,v.len,5,3,sway*0.05,0,Math.PI*2); ctx.fill();
+            for (let fl = 0; fl < 3; fl++) {
+                let fy = v.len * (0.2 + fl * 0.3);
+                let fsx = vx + sway * (0.2 + fl * 0.3);
+                ctx.save(); ctx.translate(fsx, fy); ctx.rotate(0.3 + fl * 0.4);
+                ctx.fillStyle = fl % 2 === 0 ? '#0E6A28' : '#1A7A35';
+                ctx.beginPath(); ctx.ellipse(0, 0, 14, 6, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(0,40,0,0.3)'; ctx.lineWidth = 0.8;
+                ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(14, 0); ctx.stroke();
+                ctx.restore();
+            }
         }
     }
     _drawButterflies(ctx) {
+        // Borboletas BRANCAS como na imagem
         let t=Date.now()*0.008;
         for (let b of this.butterflies) {
             let wingAng=Math.sin(t+b.phase)*0.6;
             ctx.save(); ctx.translate(b.x,b.y);
-            // Asa esquerda
-            ctx.fillStyle=b.color; ctx.globalAlpha=0.7;
+            ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.globalAlpha=0.8;
             ctx.beginPath(); ctx.ellipse(-5*Math.cos(wingAng),-2,7,4,wingAng,0,Math.PI*2); ctx.fill();
-            // Asa direita
             ctx.beginPath(); ctx.ellipse(5*Math.cos(wingAng),-2,7,4,-wingAng,0,Math.PI*2); ctx.fill();
-            // Corpo
-            ctx.globalAlpha=1; ctx.fillStyle='#333';
-            ctx.fillRect(-1,-4,2,8);
+            ctx.globalAlpha=1; ctx.fillStyle='#aaa';
+            ctx.fillRect(-0.5,-3,1,6);
             ctx.restore();
         }
     }
@@ -473,37 +505,10 @@ class UI {
     }
     drawStartScreen(ctx, highScore, explorerFrame, bg) {
         bg.draw(ctx, false);
-        // Overlay com gradiente
-        let og=ctx.createLinearGradient(0,0,0,this.h);
-        og.addColorStop(0,'rgba(0,30,0,0.55)');og.addColorStop(0.5,'rgba(0,20,0,0.35)');og.addColorStop(1,'rgba(0,30,0,0.6)');
-        ctx.fillStyle=og;ctx.fillRect(0,0,this.w,this.h);
-        // Título com glow pulsante
-        ctx.textAlign = 'center';
-        ctx.save();
-        ctx.shadowColor='#ffd700';ctx.shadowBlur=15+this.titleGlow*20;
-        ctx.font = 'bold 44px "Courier New", monospace';
-        ctx.fillStyle = '#000'; ctx.fillText('FUGA NA FLORESTA', this.w/2+2, this.h*0.28+2);
-        ctx.fillStyle = '#ffd700'; ctx.fillText('FUGA NA FLORESTA', this.w/2, this.h*0.28);
-        ctx.restore();
-        // Sub com brilho
-        ctx.font = '14px "Courier New", monospace';
-        ctx.fillStyle = `rgba(136,255,136,${0.7+this.titleGlow*0.3})`;
-        ctx.fillText('🌿 Uma aventura na Amazônia 🌿', this.w/2, this.h*0.35);
-        // Instruções piscando
-        ctx.font = '18px "Courier New", monospace';
-        let blink = Math.sin(Date.now()*0.005)>0;
-        if(blink){ctx.fillStyle='#fff';ctx.fillText('Pressione ESPAÇO ou Toque para começar',this.w/2,this.h*0.6);}
-        // High score com ícone
-        ctx.font='bold 16px "Courier New", monospace';
-        ctx.fillStyle='#ffd700';ctx.fillText('🏆 Recorde: '+Math.floor(highScore),this.w/2,this.h*0.7);
-        // Controles em painel
-        ctx.fillStyle='rgba(0,0,0,0.3)';
-        let pw=500,ph=40,px=this.w/2-pw/2,py=this.h*0.78;
-        ctx.beginPath();ctx.roundRect(px,py,pw,ph,8);ctx.fill();
-        ctx.font='11px "Courier New", monospace';ctx.fillStyle='#ccc';
-        ctx.fillText('↑/ESPAÇO = Pular  |  ↓ = Agachar  |  ENTER = Pausar',this.w/2,py+16);
-        ctx.fillText('Mobile: Toque inferior = Pular/Agachar  |  Toque superior = Pausar',this.w/2,py+30);
-        ctx.textAlign='left';
+        // O Menu inicial agora é desenhado em HTML. 
+        // Apenas atualiza o highScore na UI HTML:
+        let hsEl = document.getElementById('ui-high-score');
+        if(hsEl) hsEl.textContent = Math.floor(highScore);
     }
     drawPauseScreen(ctx) {
         ctx.fillStyle = 'rgba(0,0,0,0.55)';

@@ -16,13 +16,31 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Floresta">
     <link rel="apple-touch-icon" href="icon-192.png">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
     <title>Fuga na Floresta 🌿</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container" style="position: relative;">
+    <div id="game-container">
         <canvas id="gameCanvas"></canvas>
+        
+        <!-- Nova UI sobre o Canvas -->
+        <div id="ui-layer">
+            <div id="start-screen">
+                <div class="start-instruction">
+                    <p class="blink">Pressione ESPAÇO ou Toque para começar</p>
+                    <p class="record-text">🏆 Recorde: <span id="ui-high-score">0</span></p>
+                </div>
+            </div>
+            
+            <div id="bottom-hud">
+                <div class="wood-plank">
+                    <p>/ESPAÇO = Pular | ↓ = Agachar | ENTER Pausar</p>
+                    <p>Mobile: Toque inferior = Pular/Agachar | Toque superior = Pausar</p>
+                </div>
+            </div>
+        </div>
+
         <button id="pwa-install-btn" style="display:none; position:absolute; top: 40%; left: 50%; transform: translateX(-50%); z-index: 100; padding: 12px 24px; background: #4CAF50; color: white; border: 2px solid white; border-radius: 25px; font-weight: bold; font-family: monospace; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6); animation: pulseBtn 1.5s infinite;">📲 INSTALAR APP</button>
     </div>
     <style>

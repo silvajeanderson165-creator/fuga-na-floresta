@@ -48,3 +48,118 @@ html, body {
 #gameCanvas {
     touch-action: manipulation;
 }
+
+/* ═══════════════════════════════════════════════════════
+   UI LAYER E MENU INICIAL HTML
+   ═══════════════════════════════════════════════════════ */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Let clicks pass to canvas when needed */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 10;
+}
+
+#start-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 14vh;
+    pointer-events: auto;
+    transition: opacity 0.5s ease;
+}
+
+#start-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Titulo Principal Removido (Usando imagem de fundo) */
+
+/* Area Central Translúcida */
+.start-instruction {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+}
+
+.blink {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    color: white;
+    animation: blinkText 1s infinite alternate;
+    margin-bottom: 8px;
+}
+
+@keyframes blinkText {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; text-shadow: 0 0 10px white; }
+}
+
+.record-text {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.3rem;
+    color: #FFD700;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Prancha de Madeira Inferior */
+#bottom-hud {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.wood-plank {
+    background: #4A2E1B;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 10px,
+      rgba(0,0,0,0.1) 10px,
+      rgba(0,0,0,0.1) 20px
+    ), linear-gradient(to right, #3e2723, #5d4037, #3e2723);
+    border-top: 6px solid #6D4C41;
+    border-bottom: 8px solid #27160F;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.6);
+    padding: 12px 0;
+    text-align: center;
+    color: white;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.wood-plank p {
+    margin: 4px 0;
+    text-shadow: 1px 1px 2px black;
+    opacity: 0.9;
+}
+
+@media (max-width: 600px) {
+    .start-instruction { padding: 10px 20px; }
+    .wood-plank { font-size: 0.75rem; }
+}

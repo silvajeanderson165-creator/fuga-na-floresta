@@ -205,6 +205,13 @@ class Game {
         this.fadeDir = -1; this.fadeAlpha = 1; // fade-in
         this.player = new Player(this.canvas);
         this.stats.totalGames++; this._saveStats();
+        
+        // Hide HTML UI
+        let startScreen = document.getElementById('start-screen');
+        if (startScreen) startScreen.classList.add('hidden');
+        let bottomHud = document.getElementById('bottom-hud');
+        if (bottomHud) bottomHud.style.display = 'none';
+        
         this.audio.startSteps(this.speed); this.audio.startAmbience(); this.audio.startBGM();
     }
     _gameOver() {

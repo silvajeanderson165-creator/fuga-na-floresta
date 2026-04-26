@@ -9,98 +9,168 @@ class Player {
         this.width = 35; this.height = 60;
         this.vy = 0; this.gravity = 0.65; this.jumpForce = -13;
         this.onGround = true; this.ducking = false; this.dead = false;
-        this.frame = 0; this.frameTimer = 0; this.frameInterval = 8;
-        this.duckHeight = 30;
-        this.blinkTimer = 0; this.wasInAir = false;
+        
+        // Animação (do usuário)
+        this.frame = 0;
+        this.frameInterval = 8;
+        this.legSwing = 0;
+        this.armSwing = 0;
+        this.blinkTimer = 0;
+        
+        // Cores do personagem tribal (do usuário)
+        this.colors = {
+            skin: '#D4A373',
+            hair: '#4A2511',
+            clothes: '#FF6B35',
+            clothesDark: '#E85D2C',
+            eyes: '#2C1810',
+            detail: '#8B4513'
+        };
     }
+
     get hitbox() {
-        let pad = 0.1, w = this.width, h = this.ducking ? this.duckHeight : this.height;
+        let pad = 0.1, w = this.width, h = this.ducking ? 30 : this.height;
         let bx = this.x - w/2, by = this.y - h;
         return { x: bx + w*pad, y: by + h*pad, w: w*(1-2*pad), h: h*(1-2*pad) };
     }
+
     jump() {
         if (this.onGround && !this.dead) { this.vy = this.jumpForce; this.onGround = false; return true; }
         return false;
     }
+
     duck(d) { if (!this.dead) this.ducking = d; }
+
     die() { this.dead = true; this.ducking = false; }
+
     update() {
         if (this.dead) { this.blinkTimer++; return; }
+        
         this.vy += this.gravity; this.y += this.vy;
         let wasAir = !this.onGround;
-        if (this.y >= this.groundY) { this.y = this.groundY; this.vy = 0; this.onGround = true; }
-        else this.onGround = false;
+        
+        if (this.y >= this.groundY) { 
+            this.y = this.groundY; this.vy = 0; this.onGround = true; 
+        } else {
+            this.onGround = false;
+        }
+        
         if (wasAir && this.onGround) this.landed = true; else this.landed = false;
+        
+        this.frame++;
         if (this.onGround && !this.ducking) {
-            this.frameTimer++; if (this.frameTimer >= this.frameInterval) { this.frameTimer = 0; this.frame = (this.frame + 1) % 4; }
+            this.legSwing = Math.sin(this.frame / 5) * 0.3;
+            this.armSwing = Math.sin(this.frame / 5) * 0.2;
+        } else {
+            this.legSwing = 0;
+            this.armSwing = 0;
         }
     }
+
     draw(ctx) {
-        let x = this.x, bh = this.ducking ? this.duckHeight : this.height, by = this.y - bh;
-        // Sombra no chão
-        let shadowScale = this.onGround ? 1 : Math.max(0.3, 1-(this.groundY-this.y)/120);
-        ctx.save(); ctx.globalAlpha=0.25;
-        ctx.fillStyle='#000'; ctx.beginPath();
-        ctx.ellipse(x, this.groundY+2, 18*shadowScale, 5*shadowScale, 0, 0, Math.PI*2); ctx.fill();
-        ctx.restore();
-        // Piscar ao morrer
         ctx.save();
+        
+        // Se morto, tomba para frente e pisca
         if (this.dead) {
             if (Math.floor(this.blinkTimer/4)%2===0) ctx.globalAlpha=0.4;
-            ctx.translate(x, this.y); ctx.rotate(0.4); ctx.translate(-x, -this.y);
+            ctx.translate(this.x, this.y);
+            ctx.rotate(0.4);
+            ctx.translate(-this.x, -this.y);
         }
-        // Pernas
-        let legOff = this.onGround && !this.ducking ? Math.sin(this.frame * Math.PI/2) * 8 : 0;
+
+        // Ajusta as posições X e Y para baterem com o código de desenho do usuário
+        let drawX = this.x - this.width / 2;
+        let drawY = this.y - this.height;
+
         if (this.ducking) {
-            ctx.fillStyle = '#6B5B3A'; ctx.fillRect(x-14, by+bh-10, 10, 10); ctx.fillRect(x+4, by+bh-10, 10, 10);
+            this.drawDucking(ctx, drawX, drawY);
+        } else if (!this.onGround) {
+            this.drawJumping(ctx, drawX, drawY);
         } else {
-            ctx.fillStyle = '#6B5B3A';
-            ctx.fillRect(x-10, by+bh-22+legOff, 8, 22-legOff);
-            ctx.fillRect(x+2, by+bh-22-legOff, 8, 22+legOff);
-            // Botas
-            ctx.fillStyle = '#4a3520';
-            ctx.fillRect(x-12, this.y-6, 12, 6);
-            ctx.fillRect(x, this.y-6, 12, 6);
+            this.drawRunning(ctx, drawX, drawY);
         }
-        // Corpo
-        if (this.ducking) {
-            ctx.fillStyle = '#D2B48C'; ctx.fillRect(x-15, by+4, 30, 16);
-            // Cabeça deitada
-            ctx.fillStyle = '#E8C89E'; ctx.beginPath(); ctx.arc(x+12, by+10, 9, 0, Math.PI*2); ctx.fill();
-            // Chapéu
-            ctx.fillStyle = '#8B7355'; ctx.fillRect(x+4, by, 18, 5);
-            ctx.fillRect(x+7, by-4, 12, 5);
+
+        ctx.restore();
+    }
+
+    drawRunning(ctx, x, y) {
+        // PERNAS (Perfil)
+        this.drawLeg(ctx, x + 10, y + 35, this.legSwing);      // Perna de trás
+        this.drawLeg(ctx, x + 18, y + 35, -this.legSwing);     // Perna da frente
+
+        // BRAÇO ATRÁS (Sombra)
+        this.drawArm(ctx, x + 16, y + 20, -this.armSwing, true);
+
+        // CORPO (Perfil lateral)
+        ctx.fillStyle = this.colors.clothes; ctx.fillRect(x + 8, y + 20, 18, 22);
+        ctx.fillStyle = this.colors.clothesDark; ctx.fillRect(x + 8, y + 20, 18, 3);
+        ctx.fillRect(x + 20, y + 23, 4, 19); // Detalhe na frente
+
+        // CABEÇA (Perfil virado para a direita)
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 10, y + 5, 16, 18);
+        ctx.fillStyle = this.colors.hair; 
+        ctx.fillRect(x + 8, y + 2, 16, 8); // Topo
+        ctx.fillRect(x + 8, y + 5, 6, 12); // Nuca
+        
+        ctx.fillStyle = this.colors.detail; ctx.fillRect(x + 8, y + 8, 18, 2); // Faixa
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 9, y + 12, 3, 4); // Orelha
+
+        // ROSTO (Perfil - só o lado direito aparece)
+        if (this.dead) {
+            ctx.strokeStyle = this.colors.eyes; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x+19,y+12); ctx.lineTo(x+22,y+15); ctx.moveTo(x+22,y+12); ctx.lineTo(x+19,y+15); ctx.stroke();
         } else {
-            // Torso
-            ctx.fillStyle = '#D2B48C'; ctx.fillRect(x-12, by+16, 24, 22);
-            // Mochila
-            ctx.fillStyle = '#8B6914'; ctx.fillRect(x-16, by+18, 6, 16);
-            // Braços
-            let armOff = this.onGround ? Math.sin(this.frame * Math.PI/2) * 6 : -4;
-            ctx.fillStyle = '#D2B48C';
-            ctx.fillRect(x-16, by+18+armOff, 5, 14);
-            ctx.fillRect(x+11, by+18-armOff, 5, 14);
-            // Cabeça
-            ctx.fillStyle = '#E8C89E'; ctx.beginPath(); ctx.arc(x, by+10, 11, 0, Math.PI*2); ctx.fill();
-            // Olhos
-            ctx.fillStyle = '#333';
-            if (this.dead) {
-                ctx.fillText('x', x-5, by+12); ctx.fillText('x', x+2, by+12);
-            } else {
-                ctx.fillRect(x-5, by+8, 3, 3); ctx.fillRect(x+3, by+8, 3, 3);
-            }
-            // Chapéu safari
-            ctx.fillStyle = '#8B7355';
-            ctx.fillRect(x-14, by-1, 28, 5);
-            ctx.fillRect(x-9, by-8, 18, 8);
-            ctx.fillStyle = '#76623E'; ctx.fillRect(x-9, by-1, 18, 2);
+            ctx.fillStyle = this.colors.eyes; ctx.fillRect(x + 19, y + 12, 3, 3); // Olho
+            ctx.fillRect(x + 21, y + 18, 4, 2); // Boca (na beirada direita)
         }
-        // Contorno preto sutil
-        ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1;
-        if(!this.ducking){
-            ctx.strokeRect(x-12,by+16,24,22); // torso
-            ctx.beginPath();ctx.arc(x,by+10,11,0,Math.PI*2);ctx.stroke(); // cabeça
-        }
+
+        // BRAÇO FRENTE
+        this.drawArm(ctx, x + 14, y + 20, this.armSwing, false);
+    }
+
+    drawJumping(ctx, x, y) {
+        ctx.fillStyle = this.colors.detail;
+        ctx.fillRect(x + 10, y + 40, 6, 16); ctx.fillRect(x + 18, y + 40, 6, 16);
+        ctx.fillRect(x + 10, y + 56, 8, 4); ctx.fillRect(x + 18, y + 56, 8, 4);
+
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 14, y + 10, 5, 15); // Braço cima
+
+        ctx.fillStyle = this.colors.clothes; ctx.fillRect(x + 8, y + 20, 18, 22);
+        ctx.fillStyle = this.colors.clothesDark; ctx.fillRect(x + 8, y + 20, 18, 3);
+
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 10, y + 5, 16, 18);
+        ctx.fillStyle = this.colors.hair; ctx.fillRect(x + 8, y + 2, 16, 8); ctx.fillRect(x + 8, y + 5, 6, 12);
+        ctx.fillStyle = this.colors.detail; ctx.fillRect(x + 8, y + 8, 18, 2);
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 9, y + 12, 3, 4);
+
+        ctx.fillStyle = this.colors.eyes; ctx.fillRect(x + 19, y + 12, 3, 3);
+    }
+
+    drawDucking(ctx, x, y) {
+        y = y + 30; // Mais baixo
+
+        ctx.fillStyle = this.colors.detail; ctx.fillRect(x + 10, y + 8, 6, 12); ctx.fillRect(x + 18, y + 8, 6, 12);
+        ctx.fillStyle = this.colors.clothes; ctx.fillRect(x + 6, y, 22, 15);
+        ctx.fillStyle = this.colors.clothesDark; ctx.fillRect(x + 6, y, 22, 2);
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 14, y + 5, 5, 10);
+
+        ctx.fillStyle = this.colors.skin; ctx.fillRect(x + 12, y - 10, 16, 13);
+        ctx.fillStyle = this.colors.hair; ctx.fillRect(x + 10, y - 13, 16, 6); ctx.fillRect(x + 10, y - 10, 6, 8);
+        ctx.fillStyle = this.colors.detail; ctx.fillRect(x + 10, y - 10, 18, 2);
+        ctx.fillStyle = this.colors.eyes; ctx.fillRect(x + 21, y - 5, 3, 2);
+    }
+
+    drawLeg(ctx, x, y, swing) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(swing);
+        ctx.fillStyle = this.colors.detail; ctx.fillRect(0, 0, 6, 15); ctx.fillRect(0, 15, 6, 10); 
+        ctx.fillRect(0, 25, 9, 4); // Pé apontando para a direita
+        ctx.restore();
+    }
+
+    drawArm(ctx, x, y, swing, isBack = false) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(swing);
+        ctx.fillStyle = isBack ? this.colors.detail : this.colors.skin; 
+        ctx.fillRect(0, 0, 5, 15); ctx.fillRect(0, 15, 5, 4);
         ctx.restore();
     }
 }
