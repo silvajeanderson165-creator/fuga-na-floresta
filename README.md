@@ -8,6 +8,8 @@
 [![Canvas API](https://img.shields.io/badge/Canvas_API-FF6F00?style=flat-square)](#)
 [![Web Audio](https://img.shields.io/badge/Web_Audio_API-7B1FA2?style=flat-square)](#)
 
+🟢 **LIVE DEMO:** [Jogue Fuga na Floresta Ao Vivo Aqui](https://fuga-na-floresta.vercel.app)
+
 ---
 
 ## 🎮 Sobre o Jogo
